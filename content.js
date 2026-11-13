@@ -275,10 +275,12 @@ function resetDragStyles() {
     } catch (e) { }
 }
 
-// Любая непредвиденная ошибка в обработчике не должна попадать в консоль страницы
-function safeCall(fn) {
+// Любая непредвиденная ошибка в обработчике не должна попадать в консоль страницы.
+// ВАЖНО: аргументы передаются обработчику как есть (rest-параметры), иначе событие
+// подменялось бы самой функцией и все жесты переставали работать.
+function safeCall(fn, ...args) {
     try {
-        return fn.apply(null, arguments);
+        return fn.apply(null, args);
     } catch (e) {
         log('error: ' + (e && e.message ? e.message : e));
         return undefined;
