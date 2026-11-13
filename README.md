@@ -9,9 +9,10 @@
 Зажмите левую кнопку мыши на видео и тяните вправо — скорость вырастет с 1× до 4×.
 Потяните вверх — скорость зафиксируется и останется до конца ролика.
 
+[![Version](https://img.shields.io/badge/version-1.0-orange.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4.svg)](manifest.json)
-[![Chrome](https://img.shields.io/badge/Chrome%2FChromium-64%2B-4285F4.svg)](https://www.google.com/chrome/)
+[![Chrome](https://img.shields.io/badge/Chrome%2FChromium-102%2B-4285F4.svg)](https://www.google.com/chrome/)
 
 </div>
 
