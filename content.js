@@ -225,16 +225,16 @@ try {
 function safeInit() {
     if (isInitialized) return;
 
-    window.addEventListener('mousedown', onMouseDown, { capture: true, passive: false });
-    window.addEventListener('mousemove', onMouseMove, { capture: true, passive: false });
-    window.addEventListener('mouseup', onMouseUp, { capture: true, passive: false });
-    window.addEventListener('pointerup', onPointerUp, { capture: true, passive: false });
-    window.addEventListener('pointercancel', onPointerUp, { capture: true, passive: false });
-    window.addEventListener('click', onClickBlocker, { capture: true, passive: false });
-    window.addEventListener('blur', forceResetDrag, { capture: true });
-    window.addEventListener('pagehide', forceResetDrag, { capture: true });
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    document.addEventListener('mouseout', onDocumentMouseOut, { capture: true });
+    window.addEventListener('mousedown', function (e) { safeCall(onMouseDown, e); }, { capture: true, passive: false });
+    window.addEventListener('mousemove', function (e) { safeCall(onMouseMove, e); }, { capture: true, passive: false });
+    window.addEventListener('mouseup', function (e) { safeCall(onMouseUp, e); }, { capture: true, passive: false });
+    window.addEventListener('pointerup', function (e) { safeCall(onPointerUp, e); }, { capture: true, passive: false });
+    window.addEventListener('pointercancel', function (e) { safeCall(onPointerUp, e); }, { capture: true, passive: false });
+    window.addEventListener('click', function (e) { safeCall(onClickBlocker, e); }, { capture: true, passive: false });
+    window.addEventListener('blur', function () { safeCall(forceResetDrag); }, { capture: true });
+    window.addEventListener('pagehide', function () { safeCall(forceResetDrag); }, { capture: true });
+    document.addEventListener('visibilitychange', function () { safeCall(onVisibilityChange); });
+    document.addEventListener('mouseout', function (e) { safeCall(onDocumentMouseOut, e); }, { capture: true });
 
     refreshShadowRoots();
     startDomObserver();
@@ -246,17 +246,43 @@ function safeInit() {
 }
 
 // --- ПРИНУДИТЕЛЬНЫЙ СБРОС ---
+// document.body бывает null (about:blank фреймы, документы без <body>),
+// поэтому работаем через безопасный хелпер и никогда не падаем.
+function getStyleHost() {
+    try {
+        return document.body || document.documentElement || null;
+    } catch (e) {
+        return null;
+    }
+}
+
 // Стили на время перетаскивания: прячем курсор и запрещаем выделение текста
 function startDragStyles() {
-    if (!document.body) return;
-    document.body.style.cursor = 'none';
-    document.body.style.userSelect = 'none';
+    const host = getStyleHost();
+    if (!host || !host.style) return;
+    try {
+        host.style.setProperty('cursor', 'none', 'important');
+        host.style.setProperty('user-select', 'none', 'important');
+    } catch (e) { }
 }
 
 function resetDragStyles() {
-    if (!document.body) return;
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+    const host = getStyleHost();
+    if (!host || !host.style) return;
+    try {
+        host.style.removeProperty('cursor');
+        host.style.removeProperty('user-select');
+    } catch (e) { }
+}
+
+// Любая непредвиденная ошибка в обработчике не должна попадать в консоль страницы
+function safeCall(fn) {
+    try {
+        return fn.apply(null, arguments);
+    } catch (e) {
+        log('error: ' + (e && e.message ? e.message : e));
+        return undefined;
+    }
 }
 
 function forceResetDrag() {
@@ -288,20 +314,22 @@ function onVisibilityChange() {
 // Страховка: если активный режим «завис» (потерян mouseup) — гасим его
 function startSafetyWatchdog() {
     if (safetyTimer) clearInterval(safetyTimer);
-    safetyTimer = setInterval(() => {
-        if (!isActiveMode) return;
-        // 1) перетаскивание уже закончилось, а активный режим остался
-        // 2) мышь «залипла» нажатой — давно не было движения
-        const stale = !isDragging || (Date.now() - lastMoveTime > STALE_DRAG_MS);
-        if (stale) {
-            log("Safety watchdog: reset stuck active mode");
-            isActiveMode = false;
-            isDragging = false;
-            isSpeedLocked = false;
-            if (activationTimer) clearTimeout(activationTimer);
-            hideHUD();
-            resetDragStyles();
-        }
+    safetyTimer = setInterval(function () {
+        safeCall(function () {
+            if (!isActiveMode) return;
+            // 1) перетаскивание уже закончилось, а активный режим остался
+            // 2) мышь «залипла» нажатой — давно не было движения
+            const stale = !isDragging || (Date.now() - lastMoveTime > STALE_DRAG_MS);
+            if (stale) {
+                log("Safety watchdog: reset stuck active mode");
+                isActiveMode = false;
+                isDragging = false;
+                isSpeedLocked = false;
+                if (activationTimer) clearTimeout(activationTimer);
+                hideHUD();
+                resetDragStyles();
+            }
+        });
     }, 700);
 }
 
@@ -314,22 +342,26 @@ function onDocumentMouseOut(e) {
 
 // --- ПЕРЕХВАТЧИК ПАУЗЫ ---
 function hardPauseBlocker(e) {
-    if (isActiveMode || isDragging) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (activeVideo) {
-            try { activeVideo.focus({ preventScroll: true }); } catch (err) {
-                try { activeVideo.focus(); } catch (e2) { }
-            }
-            activeVideo.play().catch(() => { });
-            setTimeout(() => {
-                if (activeVideo && activeVideo.paused) {
-                    activeVideo.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    try {
+        if (isActiveMode || isDragging) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (activeVideo) {
+                try { activeVideo.focus({ preventScroll: true }); } catch (err) {
+                    try { activeVideo.focus(); } catch (e2) { }
                 }
-            }, 10);
+                activeVideo.play().catch(() => { });
+                setTimeout(function () {
+                    safeCall(function () {
+                        if (activeVideo && activeVideo.paused) {
+                            activeVideo.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                        }
+                    });
+                }, 10);
+            }
+            return false;
         }
-        return false;
-    }
+    } catch (err) { }
 }
 
 function ensurePauseInterceptor(video) {
@@ -388,7 +420,8 @@ function buildHUD() {
 }
 
 function resolveHudContainer() {
-    if (!activeVideo) return document.body;
+    const body = document.body || document.documentElement;
+    if (!activeVideo) return body;
 
     // Поднимаемся вверх, ищем обёртку плеера
     let el = activeVideo.parentElement;
@@ -405,11 +438,12 @@ function resolveHudContainer() {
         const pr = parent.getBoundingClientRect();
         if (pr.width >= 240) return parent;
     }
-    return document.body;
+    return body;
 }
 
 function ensureHUD() {
     const target = resolveHudContainer();
+    if (!target) return;
 
     if (!hudElement) {
         buildHUD();
@@ -422,10 +456,12 @@ function ensureHUD() {
     if (!hudElement) return;
 
     const isBody = target === document.body;
-    const compStyle = window.getComputedStyle(target);
-    if (compStyle.position === 'static') {
-        target.style.position = 'relative';
-    }
+    try {
+        const compStyle = window.getComputedStyle(target);
+        if (compStyle.position === 'static') {
+            target.style.position = 'relative';
+        }
+    } catch (e) { }
 
     hudElement.style.cssText = `
         position: ${isBody ? 'fixed' : 'absolute'} !important;
@@ -585,21 +621,23 @@ function findActiveVideo() {
 
 function startSearchLoop() {
     if (searchInterval) clearInterval(searchInterval);
-    searchInterval = setInterval(() => {
-        if (!isExtensionEnabled) return;
-        if (isDragging) return;
+    searchInterval = setInterval(function () {
+        safeCall(function () {
+            if (!isExtensionEnabled) return;
+            if (isDragging) return;
 
-        const stale = !activeVideo || !activeVideo.isConnected;
-        if (stale) {
-            // плеер мог спрятать видео в shadow root, которого мы ещё не знаем
-            if (shadowRoots.length === 0) refreshShadowRoots();
+            const stale = !activeVideo || !activeVideo.isConnected;
+            if (stale) {
+                // плеер мог спрятать видео в shadow root, которого мы ещё не знаем
+                if (shadowRoots.length === 0) refreshShadowRoots();
 
-            activeVideo = findActiveVideo();
-            if (activeVideo) {
-                ensurePauseInterceptor(activeVideo);
-                ensureHUD();
+                activeVideo = findActiveVideo();
+                if (activeVideo) {
+                    ensurePauseInterceptor(activeVideo);
+                    ensureHUD();
+                }
             }
-        }
+        });
     }, VIDEO_SCAN_INTERVAL);
 }
 
@@ -607,21 +645,23 @@ function startSearchLoop() {
 function startDomObserver() {
     if (domObserver) return;
     try {
-        domObserver = new MutationObserver(() => {
+        domObserver = new MutationObserver(function () {
             if (scanQueued) return;
             scanQueued = true;
-            setTimeout(() => {
+            setTimeout(function () {
                 scanQueued = false;
-                refreshShadowRoots();
+                safeCall(function () {
+                    refreshShadowRoots();
 
-                if (!activeVideo || !activeVideo.isConnected) {
-                    const v = findActiveVideo();
-                    if (v) {
-                        activeVideo = v;
-                        ensurePauseInterceptor(v);
-                        ensureHUD();
+                    if (!activeVideo || !activeVideo.isConnected) {
+                        const v = findActiveVideo();
+                        if (v) {
+                            activeVideo = v;
+                            ensurePauseInterceptor(v);
+                            ensureHUD();
+                        }
                     }
-                }
+                });
             }, 1200);
         });
         domObserver.observe(document.documentElement, { childList: true, subtree: true });
@@ -631,17 +671,19 @@ function startDomObserver() {
 // Держим зафиксированную скорость, если плеер её сбрасывает
 function startPersistLoop() {
     if (persistTimer) clearInterval(persistTimer);
-    persistTimer = setInterval(() => {
-        if (!isExtensionEnabled || persistSpeed === null) return;
-        if (isDragging) return;
-        const v = activeVideo;
-        if (!v || !v.isConnected) return;
-        try {
-            if (Math.abs(v.playbackRate - persistSpeed) > 0.01) {
-                v.playbackRate = persistSpeed;
-                v.defaultPlaybackRate = persistSpeed;
-            }
-        } catch (e) { }
+    persistTimer = setInterval(function () {
+        safeCall(function () {
+            if (!isExtensionEnabled || persistSpeed === null) return;
+            if (isDragging) return;
+            const v = activeVideo;
+            if (!v || !v.isConnected) return;
+            try {
+                if (Math.abs(v.playbackRate - persistSpeed) > 0.01) {
+                    v.playbackRate = persistSpeed;
+                    v.defaultPlaybackRate = persistSpeed;
+                }
+            } catch (e) { }
+        });
     }, PERSIST_INTERVAL);
 }
 
@@ -729,14 +771,16 @@ function shouldActivateOnTarget(target, e) {
 // --- ОБРАБОТЧИКИ ---
 function startActivationTimer() {
     if (activationTimer) clearTimeout(activationTimer);
-    activationTimer = setTimeout(() => {
-        if (isDragging && activeVideo) {
-            isActiveMode = true;
-            ensurePauseInterceptor(activeVideo);
-            setSpeed(2.0);
-            showHUD();
-            activeVideo.play().catch(() => { });
-        }
+    activationTimer = setTimeout(function () {
+        safeCall(function () {
+            if (isDragging && activeVideo) {
+                isActiveMode = true;
+                ensurePauseInterceptor(activeVideo);
+                setSpeed(2.0);
+                showHUD();
+                activeVideo.play().catch(() => { });
+            }
+        });
     }, ACTIVATION_DELAY);
 }
 
