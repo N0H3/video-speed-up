@@ -1,4 +1,4 @@
-// Регрессионный тест жестов расширения "Video Speed Up" на эмуляции DOM (jsdom).
+﻿// Регрессионный тест жестов расширения "Video Speed Up" на эмуляции DOM (jsdom).
 //
 // Запуск:
 //   npm install jsdom
@@ -91,6 +91,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check('активация после 200 мс', P.isActiveMode === true);
   check('скорость стала 2.0', Math.abs(getRate() - 2.0) < 0.001, 'rate=' + getRate());
   check('HUD показан (opacity=1)', hudOpacity() === '1', 'opacity=' + hudOpacity());
+  const hudSvg = P.hud ? P.hud.querySelectorAll('svg path').length : 0;
+  const hudText = P.hud ? P.hud.textContent.trim() : '';
+  check('HUD не пустой: 2 контура огонька + цифра', hudSvg === 2 && hudText === '2.0', 'paths=' + hudSvg + ' text="' + hudText + '"');
+  check('в content.js нет присваивания innerHTML (Trusted Types)', !/\.innerHTML\s*=/.test(SRC));
   check('курсор скрыт на время жеста',
         window.document.body.style.cursor === 'none' || window.document.documentElement.style.cursor === 'none');
 
@@ -157,6 +161,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check('анти-залипание: режим погас, скорость вернулась к 1.0',
         P.isActiveMode === false && Math.abs(getRate() - 1.0) < 0.001, 'rate=' + getRate());
 
+  // --- 9. blur от элемента страницы НЕ должен обрывать жест ---
+  // (из-за capture:true на window ловился blur любой кнопки/видео — YouTube обрывал жест через 1-3 с)
+  fireOn(v, 'mousedown', 360, 220, 1);
+  await sleep(50);
+  v.dispatchEvent(new window.FocusEvent('blur', { bubbles: false }));
+  await sleep(250);
+  check('blur от элемента не обрывает жест', P.isDragging === true && P.isActiveMode === true, 'dragging=' + P.isDragging + ' active=' + P.isActiveMode);
+  const afterBlurSpeed = P.currentSpeed;
+  fireOn(v, 'mousemove', 520, 220, 1);
+  await sleep(80);
+  check('после blur тяга продолжает менять скорость', P.currentSpeed > afterBlurSpeed,
+        afterBlurSpeed + ' -> ' + P.currentSpeed);
+  fireOn(v, 'mouseup', 520, 220, 0);
+  await sleep(250);
+
   let failed = 0;
   for (const r of results) {
     console.log((r.pass ? 'PASS  ' : 'FAIL  ') + r.name + (r.extra ? '   [' + r.extra + ']' : ''));
@@ -165,3 +184,4 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   console.log('\n' + (results.length - failed) + '/' + results.length + ' passed');
   process.exit(failed ? 1 : 0);
 })();
+

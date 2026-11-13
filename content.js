@@ -41,7 +41,45 @@ let hudVisible = false;         // показан ли HUD (сохраняем �
 const processedVideos = new WeakSet();
 
 // --- ОГОНЁК (SVG, чтобы одинаково рисовался в любом браузере) ---
-const FLAME_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vsFlameGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ff2d00"/><stop offset="45%" stop-color="#ff9100"/><stop offset="100%" stop-color="#ffd83d"/></linearGradient></defs><path fill="url(#vsFlameGrad)" d="M12.9 1.4c.4 3-1.3 4.4-2.9 5.8C8.4 8.7 6.7 10.5 6.7 13.6c0 3.4 2.5 5.7 5.4 5.7s5.4-2.3 5.4-5.7c0-2.1-.9-3.7-1.9-5-.3 1.1-1 1.8-1.9 2.1.5-3-.6-6.2-1-9.3z"/><path fill="#ffe469" d="M12 10.2c1.3 1.5 2.3 2.6 2.3 4.1a2.3 2.3 0 0 1-4.6 0c0-1.6 1.1-2.7 2.3-4.1z"/></svg>`;
+// Собираем через createElementNS, а НЕ через innerHTML: на сайтах с Trusted Types
+// (YouTube, Google, GitHub и др.) присваивание innerHTML блокируется браузером,
+// из-за чего HUD оставался пустым.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function buildFlameSvg() {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '20');
+    svg.setAttribute('height', '20');
+
+    const defs = document.createElementNS(SVG_NS, 'defs');
+    const grad = document.createElementNS(SVG_NS, 'linearGradient');
+    grad.setAttribute('id', 'vsFlameGrad');
+    grad.setAttribute('x1', '0');
+    grad.setAttribute('y1', '1');
+    grad.setAttribute('x2', '0');
+    grad.setAttribute('y2', '0');
+    [['0%', '#ff2d00'], ['45%', '#ff9100'], ['100%', '#ffd83d']].forEach(function (pair) {
+        const stop = document.createElementNS(SVG_NS, 'stop');
+        stop.setAttribute('offset', pair[0]);
+        stop.setAttribute('stop-color', pair[1]);
+        grad.appendChild(stop);
+    });
+    defs.appendChild(grad);
+
+    const outer = document.createElementNS(SVG_NS, 'path');
+    outer.setAttribute('fill', 'url(#vsFlameGrad)');
+    outer.setAttribute('d', 'M12.9 1.4c.4 3-1.3 4.4-2.9 5.8C8.4 8.7 6.7 10.5 6.7 13.6c0 3.4 2.5 5.7 5.4 5.7s5.4-2.3 5.4-5.7c0-2.1-.9-3.7-1.9-5-.3 1.1-1 1.8-1.9 2.1.5-3-.6-6.2-1-9.3z');
+
+    const inner = document.createElementNS(SVG_NS, 'path');
+    inner.setAttribute('fill', '#ffe469');
+    inner.setAttribute('d', 'M12 10.2c1.3 1.5 2.3 2.6 2.3 4.1a2.3 2.3 0 0 1-4.6 0c0-1.6 1.1-2.7 2.3-4.1z');
+
+    svg.appendChild(defs);
+    svg.appendChild(outer);
+    svg.appendChild(inner);
+    return svg;
+}
 
 // --- БЕЗОПАСНЫЕ ХЕЛПЕРЫ ---
 function log(msg) { /* console.log(`[VS] ${msg}`); */ }
@@ -231,7 +269,10 @@ function safeInit() {
     window.addEventListener('pointerup', function (e) { safeCall(onPointerUp, e); }, { capture: true, passive: false });
     window.addEventListener('pointercancel', function (e) { safeCall(onPointerUp, e); }, { capture: true, passive: false });
     window.addEventListener('click', function (e) { safeCall(onClickBlocker, e); }, { capture: true, passive: false });
-    window.addEventListener('blur', function () { safeCall(forceResetDrag); }, { capture: true });
+    // ВАЖНО: без capture! Иначе сюда прилетают blur от ЛЮБОГО элемента страницы
+    // (YouTube фокусирует/расфокусирует кнопки и само видео) — и жест обрывается.
+    // Без capture ловится только blur самого окна (переключение вкладки/Alt+Tab).
+    window.addEventListener('blur', function () { safeCall(forceResetDrag); });
     window.addEventListener('pagehide', function () { safeCall(forceResetDrag); }, { capture: true });
     document.addEventListener('visibilitychange', function () { safeCall(onVisibilityChange); });
     document.addEventListener('mouseout', function (e) { safeCall(onDocumentMouseOut, e); }, { capture: true });
@@ -408,7 +449,7 @@ function buildHUD() {
     flameIcon = document.createElement('span');
     flameIcon.id = 'speed-flame';
     flameIcon.style.cssText = 'display:flex !important;align-items:center !important;filter:drop-shadow(0 2px 4px rgba(0,0,0,.75)) !important;transform-origin:center bottom !important;';
-    flameIcon.innerHTML = FLAME_SVG;
+    flameIcon.appendChild(buildFlameSvg());
 
     speedText = document.createElement('div');
     speedText.id = 'speed-text';

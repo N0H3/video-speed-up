@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.4 — 13 ноября 2026
+
+### Исправлено
+- **На YouTube жест работал 1–3 секунды и обрывался.** Слушатель
+  `window.addEventListener('blur', forceResetDrag, { capture: true })` ловил `blur`
+  от **любого** элемента страницы (а не только от самого окна). YouTube постоянно
+  фокусирует и расфокусирует свои элементы, а `hardPauseBlocker` ещё и делает
+  `activeVideo.focus()` — из-за этого жест сбрасывался на полпути, watchdog гасил
+  активный режим, а скорость оставалась на последнем значении (обычно 2.0).
+  Теперь `blur` слушается без `capture` — только настоящее «окно потеряло фокус».
+- **Пустой HUD на сайтах с Trusted Types** (YouTube, Google, GitHub и др.).
+  Огонёк собирался через `flameIcon.innerHTML = FLAME_SVG`, а браузер блокировал
+  присваивание (`This document requires 'TrustedHTML' assignment`). Теперь SVG
+  создаётся через `createElementNS`, без `innerHTML` вообще — HUD строится полностью
+  на любом сайте.
+
 ## 1.0.3 — 13 ноября 2026
 
 ### Исправлено
