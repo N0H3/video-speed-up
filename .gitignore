@@ -1,0 +1,20 @@
+# Сборочные артефакты
+*.zip
+dist/
+release/
+
+# node / tooling
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# OS / редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# локальное
+*.local
+.env
