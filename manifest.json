@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Video Speed Up - ускорение видео",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Ускоряйте видео на любом сайте: зажмите мышью на видео и тяните вправо. От 1x до 4x.",
     "icons": {
         "16": "images/icon16.png",

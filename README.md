@@ -4,17 +4,20 @@
 
 **Ускорение видео на любом сайте — перетаскиванием мыши.**
 
+![Video Speed Up](images/demo.jpg)
+
 Зажмите левую кнопку мыши на видео и тяните вправо — скорость вырастет с 1× до 4×.
 Потяните вверх — скорость зафиксируется и останется до конца ролика.
 
-[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Extension-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4.svg)](manifest.json)
+[![Chrome](https://img.shields.io/badge/Chrome%2FChromium-64%2B-4285F4.svg)](https://www.google.com/chrome/)
 
 </div>
 
 ---
 
-## Как пользоваться
+## Управление
 
 | Действие | Результат |
 |---|---|
@@ -38,30 +41,60 @@
 Кнопки самого плеера (пауза, звук, перемотка, качество, полный экран) продолжают работать —
 расширение их не перехватывает. Текст на странице тоже можно выделять и копировать как обычно.
 
-## Установка
+---
 
-### Chrome Web Store
-Нажмите «Установить» в [Chrome Web Store](https://chromewebstore.google.com/) (ссылка появится после публикации).
+## Установка в Chrome / Edge / Brave / Opera
 
-### Вручную (для разработчиков)
-1. Скачайте или склонируйте репозиторий
-2. Откройте `chrome://extensions`
-3. Включите **Режим разработчика**
-4. Нажмите **«Загрузить распакованное расширение»** и выберите папку с `manifest.json`
+Расширение не публикуется в магазинах — ставится вручную из исходников.
 
-## Настройки
+### Вариант 1. Из архива (самый простой)
+
+1. Скачайте [архив релизов](https://github.com/N0H3/video-speed-up/releases) или клонируйте репозиторий
+2. **Распакуйте** архив в отдельную папку (внутри должен лежать `manifest.json`)
+3. Откройте `chrome://extensions`
+4. Включите **Режим разработчика** (тумблер в правом верхнем углу)
+5. Нажмите **«Загрузить распакованное расширение»** и выберите папку с `manifest.json`
+6. Готово — иконка 🔥 появится в панели расширений
+
+> Значок «Скачать» на странице релизов отдаёт `.zip` — Chrome не ставит zip напрямую,
+> его нужно сначала распаковать (правой кнопкой → «Извлечь сюда»).
+
+### Вариант 2. Из исходников
+
+```bash
+git clone https://github.com/N0H3/video-speed-up.git
+cd video-speed-up
+```
+
+Далее — как в варианте 1, шаги 3–6 (уже распакованная папка).
+
+### Включение / выключение
 
 Кликните по иконке расширения → кнопка **ВКЛЮЧИТЬ / ОТКЛЮЧИТЬ**.
 Состояние сохраняется и синхронизируется между вкладками.
+
+---
+
+## Сборка архива из исходников
+
+```bash
+cd video-speed-up
+zip -r video-speed-up.zip manifest.json content.js popup.html popup.js images
+```
+
+Готовый архив уже лежит в [Releases](https://github.com/N0H3/video-speed-up/releases).
+
+---
 
 ## Разработка
 
 ```
 video-speed-up/
-├── manifest.json        # Manifest V3
-├── content.js           # основная логика (поиск видео, жесты, HUD)
-├── popup.html / popup.js # окошко вкл/выкл
-└── images/              # иконки 16/32/48/128 + картинка для магазина
+├── manifest.json          # Manifest V3
+├── content.js             # основная логика (поиск видео, жесты, HUD)
+├── popup.html / popup.js  # окошко вкл/выкл
+├── images/                # иконки + иллюстрация для README
+└── docs/privacy.html      # страница политики конфиденциальности
 ```
 
 Ключевые моменты реализации:
@@ -71,13 +104,13 @@ video-speed-up/
 - **`e.composedPath()`** — в shadow DOM `e.target` указывает на хост, а не на реальный элемент
 - **Защита от «залипания»** — сброс активного режима по `pointerup`, `blur`, `visibilitychange` и watchdog-таймеру
 - **Никакого `preventDefault()` на клике** — чтобы не ломать выделение текста на странице
+- **Все обработчики в `try/catch`** — ошибка расширения никогда не попадает в консоль страницы
 
 ## Конфиденциальность
 
 Расширение **не собирает и никуда не отправляет** никакие данные.
 Всё работает локально в браузере, настройки хранятся в `chrome.storage.sync`.
-Подробнее — в [PRIVACY.md](PRIVACY.md) и на странице [docs/privacy.html](docs/privacy.html)
-(её можно опубликовать через GitHub Pages — ссылка понадобится при публикации в Chrome Web Store).
+Подробнее — в [PRIVACY.md](PRIVACY.md) и [docs/privacy.html](docs/privacy.html).
 
 ## Лицензия
 
