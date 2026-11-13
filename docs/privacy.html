@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Speed Up — Политика конфиденциальности</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#12151d; color:#d7dbe3; font:16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 30px; color:#fff; margin:0 0 6px; }
+  h2 { font-size: 21px; color:#fff; margin:36px 0 10px; }
+  .date { color:#8b93a3; font-size:14px; margin-bottom:32px; }
+  table { border-collapse:collapse; width:100%; margin:14px 0; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #2a2f3d; font-size:15px; }
+  th { color:#fff; font-weight:600; }
+  code { background:#1c2130; padding:2px 6px; border-radius:5px; font-size:14px; }
+  .accent { color:#ffa528; }
+  hr { border:0; border-top:1px solid #2a2f3d; margin:34px 0; }
+  .en { color:#9aa3b2; font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🔥 Video Speed Up — Политика конфиденциальности</h1>
+  <p class="date">Последнее обновление: 13 ноября 2026 г.</p>
+
+  <h2>Кратко</h2>
+  <p>Расширение <strong>не собирает персональные данные</strong>, не отслеживает пользователя и ничего никуда не отправляет. Всё работает локально в вашем браузере.</p>
+
+  <h2>Какие данные используются</h2>
+  <table>
+    <tr><th>Что</th><th>Где хранится</th><th>Зачем</th></tr>
+    <tr><td>Вкл/выкл (<code>isEnabled</code>)</td><td><code>chrome.storage.sync</code></td><td>Чтобы запомнить выбор и синхронизировать его между вашими устройствами</td></tr>
+  </table>
+  <p>Больше ничего не сохраняется: ни истории просмотров, ни списков сайтов, ни cookies, ни идентификаторов пользователя.</p>
+
+  <h2>Передача данных</h2>
+  <p>Расширение <strong>не выполняет сетевых запросов</strong>. В коде нет аналитики, трекеров, рекламных SDK, внешних скриптов и удалённого кода. Данные не покидают ваш браузер.</p>
+
+  <h2>Доступ к страницам</h2>
+  <p>Расширение подключается к страницам, чтобы найти элемент <code>&lt;video&gt;</code> и изменить его скорость воспроизведения. Содержимое страниц не читается, не записывается и не передаётся — изменяется только свойство <code>playbackRate</code> видео-элемента.</p>
+  <p>Расширение не работает на внутренних страницах браузера (<code>chrome://</code>, страницы расширений, Google Web Store) — это ограничение платформы.</p>
+
+  <h2>Ваши права</h2>
+  <p>Вы можете в любой момент отключить расширение (кнопка в popup) или удалить его — при удалении сохранённая настройка также удаляется.</p>
+
+  <h2>Изменения</h2>
+  <p>О любых изменениях этой политики будет сообщено в описании расширения в Chrome Web Store и в репозитории проекта.</p>
+
+  <hr>
+  <h2 class="en">Privacy Policy (English)</h2>
+  <p class="en"><strong>Video Speed Up</strong> does not collect, store, or transmit any personal data. The extension stores a single setting — whether it is enabled or disabled — in <code>chrome.storage.sync</code>, so your choice persists and syncs across your devices. This value never leaves your browser.</p>
+  <p class="en">The extension makes <strong>no network requests</strong> and contains no analytics, tracking, advertising SDKs, or remote code. All functionality runs locally.</p>
+  <p class="en">A content script is injected on pages to locate <code>&lt;video&gt;</code> elements and adjust their <code>playbackRate</code>. Page content is never read, stored, or transmitted.</p>
+</main>
+</body>
+</html>

@@ -76,7 +76,8 @@ video-speed-up/
 
 Расширение **не собирает и никуда не отправляет** никакие данные.
 Всё работает локально в браузере, настройки хранятся в `chrome.storage.sync`.
-Подробнее — в [PRIVACY.md](PRIVACY.md).
+Подробнее — в [PRIVACY.md](PRIVACY.md) и на странице [docs/privacy.html](docs/privacy.html)
+(её можно опубликовать через GitHub Pages — ссылка понадобится при публикации в Chrome Web Store).
 
 ## Лицензия
 
